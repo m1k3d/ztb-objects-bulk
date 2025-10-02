@@ -20,7 +20,6 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 
 ## 📂 Project Structure
 
-<<<<<<< HEAD
 ztb-objects-bulk/
 ├── templates/
 │   └── object_payload.json.j2     # Jinja2 template for object payload
@@ -29,15 +28,6 @@ ztb-objects-bulk/
 ├── .env.example                   # Sample env file (copy to .env)
 ├── requirements.txt               # Python dependencies
 └── README.md                      # This file
-=======
-- **templates/**
-  - `object_payload.json.j2` → Jinja2 template for object payload
-- **objects_bulk.py** → Main script (reads CSV → groups → POSTs)
-- **objects.csv** → Example CSV input
-- **.env.example** → Sample env file (copy to `.env`)
-- **requirements.txt** → Python dependencies
-- **readme.md**
->>>>>>> b3656b3 (updated readme.md)
 
 ---
 
@@ -64,8 +54,12 @@ ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
 >>>>>>> b3656b3 (updated readme.md)
 
 ```bash
+<<<<<<< HEAD
 ZIA_API_BASE="https://<your-tenant>-api.goairgap.com/api/v3"
 >>>>>>> f6a6e2a (updated readme.md)
+=======
+ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
+>>>>>>> d35c492 (updating readme.md)
 BEARER="<your_bearer_token>"
 
 	4.	Load into your shell:
