@@ -17,16 +17,15 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 
 ---
 
-## 📂 Project Structure
+## 📁 Project Structure
 
-ztb-objects-bulk/
-├─ templates/
-│  └─ object_payload.json.j2       # Jinja2 template for object payload
-├─ objects_bulk.py                 # Main script (reads CSV -> groups -> POSTs)
-├─ objects.csv                     # Example CSV input
-├─ .env.example                    # Sample env file (copy to .env)
-├─ requirements.txt                # Python deps
-└─ README.md
+- **templates/**
+  - `object_payload.json.j2` → Jinja2 template for object payload
+- **objects_bulk.py** → Main script (reads CSV → groups → POSTs)
+- **objects.csv** → Example CSV input
+- **.env.example** → Sample env file (copy to `.env`)
+- **requirements.txt** → Python dependencies
+- **README.md**
 
 ---
 
@@ -37,16 +36,24 @@ ztb-objects-bulk/
    git clone https://github.com/<your-username>/ztb-objects-bulk.git
    cd ztb-objects-bulk
 
-	2.	Install dependencies:
+2.	Install dependencies:
 
 pip install -r requirements.txt
 
 
-	3.	Create your .env file (copy from .env.example) and fill in:
+3.	Create your .env file (copy from .env.example) and fill in:
 
-BASE_URL=https://<your-tenant>-api.goairgap.com
-API_TOKEN=<your-api-token-or-bearer>
+ZIA_API_BASE="https://<your-tenant>-api.goairgap.com/api/v3"
+BEARER="<your_bearer_token>"
 
+	2.	Load into your shell:
+
+export $(grep -v '^#' .env | xargs)
+
+	3.	Quick token check:
+
+curl -s -H "Authorization: Bearer $BEARER" \
+  "$ZIA_API_BASE/Gateway/?limit=1&refresh_token=enabled" | jq
 
 
 ⸻
