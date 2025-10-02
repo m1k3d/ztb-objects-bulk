@@ -1,7 +1,3 @@
-Got it 👍 Let’s scrap the merge mess and just give you a clean, ready-to-paste README.md that you can copy into either GitHub’s web editor or VS Code.
-
-Here’s a fresh one:
-
 # 🚀 ZTB Objects Bulk Creator
 
 This tool automates the creation of Zscaler Zero Trust Branch (ZTB) objects (e.g., **domains** or **network prefixes**) in bulk using:
@@ -42,13 +38,19 @@ ztb-objects-bulk/
 git clone https://github.com/<your-username>/ztb-objects-bulk.git
 cd ztb-objects-bulk
 
-	2.	Install dependencies:
+2.	Install dependencies:
 
 pip install -r requirements.txt
 
 	3.	Create .env with:
 
+<<<<<<< HEAD
 ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
+=======
+3.	Create your .env file (copy from .env.example) and fill in:
+
+ZIA_API_BASE="https://<your-tenant>-api.goairgap.com/api/v3"
+>>>>>>> f6a6e2a (updated readme.md)
 BEARER="<your_bearer_token>"
 
 	4.	Load into your shell:
