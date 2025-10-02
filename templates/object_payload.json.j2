@@ -1,0 +1,13 @@
+{
+  "name": "{{ name }}",
+  "type": "{{ type }}",
+  "autonomous": false,
+  "owner": "user",
+  {% if type == "domains" -%}
+  "member_attributes": { "fqdn": {{ items | tojson }} }
+  {%- elif type == "network" -%}
+  "member_attributes": { "ip_prefix_local": {{ items | tojson }} }
+  {%- else -%}
+  "member_attributes": {}
+  {%- endif %}
+}
