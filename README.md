@@ -1,16 +1,10 @@
-Perfect 👍 — let’s make this clean and polished. I’ll regenerate your README.md so you can paste it directly into your repo.
+Got it 👍 Let’s scrap the merge mess and just give you a clean, ready-to-paste README.md that you can copy into either GitHub’s web editor or VS Code.
 
-This one will:
-	•	Clearly show usage + arguments (so anyone running your script knows what’s available).
-	•	Include setup instructions (with .env correctly showing ZIA_API_BASE and BEARER="").
-	•	Provide examples for both domain objects and network objects.
-	•	End with an Author section styled like your other repo.
-
-Here’s the full README:
+Here’s a fresh one:
 
 # 🚀 ZTB Objects Bulk Creator
 
-This tool automates the creation of **Zscaler Zero Trust Branch (ZTB)** objects (e.g. **domains** or **network prefixes**) in bulk using:
+This tool automates the creation of Zscaler Zero Trust Branch (ZTB) objects (e.g., **domains** or **network prefixes**) in bulk using:
 
 - **CSV input** for object data  
 - **Jinja2 templates** for payload generation  
@@ -21,10 +15,10 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 ---
 
 ## ✨ Features
-- Supports **domain objects** (`type: domains`) and **network objects** (`type: network`).  
-- Groups rows by **name** so multiple domains or subnets can be aggregated into one object.  
-- Uses a `.env` file for credentials and API base URL.  
-- Modular design: extendable templates for new object types.  
+- Supports **domain objects** (`type: domains`) and **network objects** (`type: network`).
+- Groups rows by **name** so multiple domains or subnets can be aggregated into one object.
+- Uses a `.env` file for credentials and API base URL.
+- Modular design: extendable templates for new object types.
 
 ---
 
@@ -32,43 +26,39 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 
 ztb-objects-bulk/
 ├── templates/
-│   └── object_payload.json.j2   # Jinja2 template for object payload
-├── objects_bulk.py              # Main script (reads CSV -> groups -> POSTs)
-├── objects.csv                  # Example CSV input
-├── .env.example                 # Sample env file (copy to .env)
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
+│   └── object_payload.json.j2     # Jinja2 template for object payload
+├── objects_bulk.py                # Main script (reads CSV -> groups -> POSTs)
+├── objects.csv                    # Example CSV input
+├── .env.example                   # Sample env file (copy to .env)
+├── requirements.txt               # Python dependencies
+└── README.md                      # This file
 
 ---
 
 ## ⚙️ Setup
 
-1. **Clone the repo:**
-   ```bash
-   git clone https://github.com/<your-username>/ztb-objects-bulk.git
-   cd ztb-objects-bulk
+1. Clone the repo:
+```bash
+git clone https://github.com/<your-username>/ztb-objects-bulk.git
+cd ztb-objects-bulk
 
 	2.	Install dependencies:
 
 pip install -r requirements.txt
-
 
 	3.	Create .env with:
 
 ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
 BEARER="<your_bearer_token>"
 
-
-	4.	Load into your shell (optional):
+	4.	Load into your shell:
 
 export $(grep -v '^#' .env | xargs)
 
-
-	5.	Quick token check (optional):
+	5.	Quick token check:
 
 curl -s -H "Authorization: Bearer $BEARER" \
-  "$ZIA_API_BASE/Gateway/?limit=1&refresh_token=enabled" | jq
-
+"$ZIA_API_BASE/Gateway/?limit=1&refresh_token=enabled" | jq
 
 
 ⸻
@@ -77,12 +67,11 @@ curl -s -H "Authorization: Bearer $BEARER" \
 
 Example: objects.csv
 
-name	type	fqdn	ip_prefix_local
-Whitelist-ZCC	domains	domain1.com	
-Whitelist-ZCC	domains	domain2.com	
-Mike-DC	network		172.16.50.0/24
+name,type,fqdn,ip_prefix_local
+Whitelist-ZCC,domains,domain1.com,
+Whitelist-ZCC,domains,domain2.com,
+Mike-DC,network,,172.16.50.0/24
 
-➡ Rows with the same name are merged into one object.
 
 ⸻
 
@@ -90,28 +79,10 @@ Mike-DC	network		172.16.50.0/24
 
 python3 objects_bulk.py
 
-Available arguments:
-
---csv <filename>       Path to CSV file (default: objects.csv)
---template <filename>  Jinja2 template (default: templates/object_payload.json.j2)
---dry-run              Print payloads without sending to API
---debug                Enable verbose output
-
-Examples:
-	•	Dry run only:
-
-python3 objects_bulk.py --dry-run
-
-
-	•	With custom CSV:
-
-python3 objects_bulk.py --csv my_objects.csv
-
-
 
 ⸻
 
-🧾 Example Payloads
+📦 Example Payloads
 
 Domain Object
 
@@ -138,9 +109,3 @@ Network Object
 }
 
 
-⸻
-
-👤 Author
-	•	Author: Mike Dechow (@m1k3d)
-	•	Repo: github.com/m1k3d/ztb-site-automation
-	•	License: MIT
