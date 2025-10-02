@@ -20,6 +20,7 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 
 ## 📂 Project Structure
 
+<<<<<<< HEAD
 ztb-objects-bulk/
 ├── templates/
 │   └── object_payload.json.j2     # Jinja2 template for object payload
@@ -28,6 +29,15 @@ ztb-objects-bulk/
 ├── .env.example                   # Sample env file (copy to .env)
 ├── requirements.txt               # Python dependencies
 └── README.md                      # This file
+=======
+- **templates/**
+  - `object_payload.json.j2` → Jinja2 template for object payload
+- **objects_bulk.py** → Main script (reads CSV → groups → POSTs)
+- **objects.csv** → Example CSV input
+- **.env.example** → Sample env file (copy to `.env`)
+- **requirements.txt** → Python dependencies
+- **readme.md**
+>>>>>>> b3656b3 (updated readme.md)
 
 ---
 
@@ -45,10 +55,15 @@ pip install -r requirements.txt
 	3.	Create .env with:
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
 =======
 3.	Create your .env file (copy from .env.example) and fill in:
+=======
+3) Create `.env` with:
+>>>>>>> b3656b3 (updated readme.md)
 
+```bash
 ZIA_API_BASE="https://<your-tenant>-api.goairgap.com/api/v3"
 >>>>>>> f6a6e2a (updated readme.md)
 BEARER="<your_bearer_token>"
@@ -109,5 +124,10 @@ Network Object
     "ip_prefix_local": ["172.16.50.0/24"]
   }
 }
+---
 
+👤 Author
+	•	Author: Mike Dechow (@m1k3d)
+	•	Repo: github.com/m1k3d/ztb-site-automation
+	•	License: MIT
 
