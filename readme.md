@@ -20,14 +20,13 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 ## 📂 Project Structure
 
 ztb-objects-bulk/
-├── templates/
-│   └── object_payload.json.j2   # Jinja2 template for object payload
-├── objects_bulk.py              # Main script
-├── objects.csv                  # CSV input with domains/networks
-├── .env                         # Environment variables (not committed)
-├── .env.example                 # Example .env for reference
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
+├─ templates/
+│  └─ object_payload.json.j2       # Jinja2 template for object payload
+├─ objects_bulk.py                 # Main script (reads CSV -> groups -> POSTs)
+├─ objects.csv                     # Example CSV input
+├─ .env.example                    # Sample env file (copy to .env)
+├─ requirements.txt                # Python deps
+└─ README.md
 
 ---
 
