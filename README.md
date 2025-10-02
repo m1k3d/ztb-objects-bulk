@@ -42,24 +42,9 @@ cd ztb-objects-bulk
 
 pip install -r requirements.txt
 
-	3.	Create .env with:
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
-=======
 3.	Create your .env file (copy from .env.example) and fill in:
-=======
-3) Create `.env` with:
->>>>>>> b3656b3 (updated readme.md)
 
-```bash
-<<<<<<< HEAD
 ZIA_API_BASE="https://<your-tenant>-api.goairgap.com/api/v3"
->>>>>>> f6a6e2a (updated readme.md)
-=======
-ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
->>>>>>> d35c492 (updating readme.md)
 BEARER="<your_bearer_token>"
 
 	4.	Load into your shell:
