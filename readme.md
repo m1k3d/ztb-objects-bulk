@@ -1,7 +1,3 @@
-Got it 👍 Let’s scrap the merge mess and just give you a clean, ready-to-paste README.md that you can copy into either GitHub’s web editor or VS Code.
-
-Here’s a fresh one:
-
 # 🚀 ZTB Objects Bulk Creator
 
 This tool automates the creation of Zscaler Zero Trust Branch (ZTB) objects (e.g., **domains** or **network prefixes**) in bulk using:
