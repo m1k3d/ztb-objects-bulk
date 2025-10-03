@@ -15,7 +15,7 @@ Examples:
 
 .env expected:
   BASE_URL="https://<vanity>-api.goairgap.com"
-  BEARER="Bearer eyJ..."
+  BEARER="eyJ..."
 """
 
 from __future__ import annotations
@@ -100,7 +100,7 @@ def main():
 
     if not base_url or not bearer:
         print("❌ BASE_URL and/or BEARER missing. Put them in .env or export in shell.")
-        print('   Example .env:\n     BASE_URL="https://<vanity>-api.goairgap.com"\n     BEARER="Bearer eyJ..."')
+        print('   Example .env:\n     BASE_URL="https://<vanity>-api.goairgap.com"\n     BEARER="eyJ..."')
         sys.exit(1)
 
     csv_path = Path(args.csv).resolve()
