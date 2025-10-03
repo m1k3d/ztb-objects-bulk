@@ -33,7 +33,7 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 
 ## ⚙️ Setup
 
-🔑 Authentication & Environment Setup
+### 🔑 Authentication & Environment Setup
 
 Before running any automation scripts, you need a valid bearer token. This repo includes a helper script: ztb_login.py.
 
@@ -91,7 +91,7 @@ or use the eval shortcut, and you’re good to go.
 
 ⸻
 
-📑 CSV Format
+### 📑 CSV Format
 
 Example objects.csv:
 
@@ -105,7 +105,7 @@ Mike-DC,network,,172.16.50.0/24
 
 ⸻
 
-🚀 Usage
+### 🚀 Usage
 
 Run the bulk creation script:
 
