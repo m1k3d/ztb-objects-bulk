@@ -33,33 +33,61 @@ It’s designed to save time when onboarding large numbers of objects into ZTB w
 
 ## ⚙️ Setup
 
-1. **Clone the repo**  
-   ```bash
-   git clone https://github.com/<your-username>/ztb-objects-bulk.git
-   cd ztb-objects-bulk
+🔑 Authentication & Environment Setup
 
-	2.	Install dependencies
+Before running any automation scripts, you need a valid bearer token. This repo includes a helper script: ztb_login.py.
 
-pip install -r requirements.txt
+1. Configure your .env
 
+At minimum, set the following:
 
-	3.	Create .env file (copy from .env.example) and fill in:
+ZIA_API_BASE=https://<tenant>-api.goairgap.com/api/v3
+API_KEY=<your_api_key>
+BEARER=""
 
-ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
-BEARER="<your_bearer_token>"
+2. Generate a Bearer Token
 
+Run the login helper:
 
-	4.	Load environment variables
+python3 ztb_login.py
 
-export $(grep -v '^#' .env | xargs)
+This will:
+	•	Call the ZTB API with your API key
+	•	Write the BEARER="Bearer <delegate_token>" value into your .env
+	•	Print an export BEARER=... line for convenience
 
+3. Load the Environment Variables
 
-	5.	Quick token check
+You have two options:
 
-curl -s -H "Authorization: Bearer $BEARER" \
-  "$ZIA_API_BASE/Gateway/?limit=1&refresh_token=enabled" | jq
+Option A — Load everything from .env
 
+set -a
+source .env
+set +a
 
+This makes all variables (ZIA_API_BASE, API_KEY, BEARER, etc.) available in your shell.
+
+Option B — Load just the BEARER token
+
+eval "$(python3 ztb_login.py | tail -n1)"
+
+This executes the printed export BEARER=... line from the script, updating your shell with only the new bearer token.
+
+4. Test Your Token
+
+Confirm it works:
+
+curl -s -H "Authorization: $BEARER" \
+  "$ZIA_API_BASE/api/v3/gateway?limit=1&refresh_tokenenabled=" | head
+
+If you see JSON output instead of Unauthorized, your token is valid.
+
+👉 Next time, you just run:
+
+python3 ztb_login.py && set -a && source .env && set +a
+
+or use the eval shortcut, and you’re good to go.
 
 ⸻
 
