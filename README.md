@@ -1,99 +1,94 @@
-# 🛠️ ZTB Objects Bulk Creator
+🛠️ ZTB Objects Bulk Creator
 
-This tool automates the creation of **Zscaler Zero Trust Branch (ZTB)** objects (e.g., domains or network prefixes) in bulk using:
+This automation tool is designed to rapidly deploy Zscaler ZTB objects — such as domain and network objects — in bulk, using simple CSV input and Jinja2 templates.
+It mirrors the same API behavior as the ZTB UI but allows for scripted, repeatable, and large-scale onboarding.
 
-- **CSV input** for object data  
-- **Jinja2 templates** for payload generation  
-- **Python requests** for posting to the Zscaler API  
+⸻
 
-It’s designed to save time when onboarding large numbers of objects into ZTB without manually clicking through the UI.  
+✨ Key Capabilities
+	•	Create Domain and Network objects directly through the API.
+	•	Group and merge multiple rows by object name for cleaner data structures.
+	•	Reference environment variables via .env for secure, reusable configuration.
+	•	Use Jinja2 templates for payload rendering — easy to modify or extend for new object types.
+	•	Built-in dry-run and debug modes for testing before live deployment.
 
----
+⸻
 
-## ✨ Features
+📁 Directory Layout
 
-- Supports **domain objects** (`type: domains`) and **network objects** (`type: network`).  
-- Groups rows by **name**, so multiple domains or subnets are aggregated into one object.  
-- Uses a `.env` file for credentials and API base URL.  
-- Modular design: easily extendable templates for new object types.  
+Project root (ztb-objects-bulk/):
+	•	objects_bulk.py — Main script to process CSV → generate payload → create ZTB objects.
+	•	ztb_login.py — Authenticates with your tenant and retrieves a Bearer token, then loads it into your environment for all other scripts.
+	•	templates/ — Folder containing your Jinja2 payload templates.
+	•	object_payload.json.j2 — Default Jinja2 template used for object creation.
+	•	objects.csv — CSV file defining objects to create (domains, networks, etc.).
+	•	.env — Environment variables (tenant URL, API key, Bearer token).
+	•	requirements.txt — Python dependencies.
+	•	README.md — Documentation and usage guide.
 
----
+Optional folders (recommended):
+	•	logs/ — Store execution logs and debug outputs.
+	•	examples/ — Example templates, payloads, or sample CSVs for reference.
+	•	archive/ — Keep historical CSVs for version tracking.
 
-## 📂 Project Structure
+⸻
 
-- `templates/` → contains Jinja2 payload templates  
-- `object_payload.json.j2` → Jinja2 template for object payload  
-- `objects_bulk.py` → main script (reads CSV → groups → POSTs to API)  
-- `objects.csv` → sample CSV input file (domains/networks)  
-- `.env.example` → example env file (copy and rename to `.env`)  
-- `requirements.txt` → Python dependencies  
-- `README.md` → this documentation  
+⚙️ Environment Setup and Authentication
 
----
+Before using any script, ensure your .env file is set up and that you’ve generated a valid Bearer token.
 
-## ⚙️ Setup
+1️⃣ Configure Your .env File
 
-### 🔑 Authentication & Environment Setup
+At minimum, define:
 
-Before running any automation scripts, you need a valid bearer token. This repo includes a helper script: ztb_login.py.
-
-1. Configure your .env
-
-At minimum, set the following:
-
-ZIA_API_BASE=https://<tenant>-api.goairgap.com/api/v3
-API_KEY=<your_api_key>
+ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
+API_KEY="<your_api_key>"
 BEARER=""
 
-2. Generate a Bearer Token
+2️⃣ Generate and Load Your Bearer Token
 
-Run the login helper:
+Use the included ztb_login.py helper.
+This script handles the full login process automatically:
 
 python3 ztb_login.py
 
-This will:
-	•	Call the ZTB API with your API key
-	•	Write the BEARER="Bearer <delegate_token>" value into your .env
-	•	Print an export BEARER=... line for convenience
+It will:
+	•	Call the ZTB API using your API key
+	•	Write your token back into .env (e.g., BEARER="Bearer <token>")
+	•	Print an export command so you can load it directly into your shell
 
-3. Load the Environment Variables
+3️⃣ Load the Environment Variables
 
-You have two options:
-
-Option A — Load everything from .env
+Option A — Load all variables from .env:
 
 set -a
 source .env
 set +a
 
-This makes all variables (ZIA_API_BASE, API_KEY, BEARER, etc.) available in your shell.
-
-Option B — Load just the BEARER token
+Option B — Load only the BEARER token (quick mode):
 
 eval "$(python3 ztb_login.py | tail -n1)"
 
-This executes the printed export BEARER=... line from the script, updating your shell with only the new bearer token.
+This runs the export line automatically and updates your active shell session.
 
-4. Test Your Token
-
-Confirm it works:
-
-curl -s -H "Authorization: $BEARER" \
-  "$ZIA_API_BASE/api/v3/gateway?limit=1&refresh_tokenenabled=" | head
-
-If you see JSON output instead of Unauthorized, your token is valid.
-
-👉 Next time, you just run:
+Next time, just run:
 
 python3 ztb_login.py && set -a && source .env && set +a
 
-or use the eval shortcut, and you’re good to go.
+or use the eval shortcut — you’ll be ready to deploy in seconds.
+
+✅ Test Your Token
+
+curl -s -H "Authorization: $BEARER" \
+"$ZIA_API_BASE/api/v3/gateway?limit=1&refresh_token=enabled" | head
+
+If you see JSON output instead of Unauthorized, your token is valid.
 
 ⸻
 
-### 📑 CSV Format
+🧾 CSV Format
 
-Example objects.csv:
+Example: objects.csv
 
 name,type,fqdn,ip_prefix_local
 Whitelist-ZCC,domains,domain1.com,
@@ -101,28 +96,31 @@ Whitelist-ZCC,domains,domain2.com,
 Mike-DC,network,,172.16.50.0/24
 
 	•	Rows with the same name are merged into a single object.
-	•	Domains go into fqdn column, networks into ip_prefix_local.
+	•	Domains go under the fqdn column.
+	•	Networks use the ip_prefix_local column.
 
 ⸻
 
-### 🚀 Usage
+🚀 Usage
 
 Run the bulk creation script:
 
 python3 objects_bulk.py
 
 Arguments
-	•	--csv <file> → Path to input CSV (default: objects.csv)
-	•	--template <file> → Path to Jinja2 template (default: templates/object_payload.json.j2)
-	•	--dry-run → Prints payloads without sending to API
-	•	--debug → Verbose logging for troubleshooting
 
-Examples:
+Flag	Description
+--csv <file>	Path to the input CSV (default: objects.csv)
+--template <file>	Path to the Jinja2 template (default: templates/object_payload.json.j2)
+--dry-run	Print payloads without posting to the API
+--debug	Enable verbose API logging
+
+Examples
 
 # Run with default CSV
 python3 objects_bulk.py
 
-# Run with custom CSV
+# Run with a custom CSV file
 python3 objects_bulk.py --csv my_objects.csv
 
 # Test payload generation only
@@ -131,9 +129,15 @@ python3 objects_bulk.py --dry-run
 
 ⸻
 
+🧠 Notes & Best Practices
+	•	Keep object names unique and consistent with your environment naming standards.
+	•	Validate the first few rows using --dry-run before mass-creation.
+	•	Store completed CSVs in /archive for rollback or audit tracking.
+	•	Extend templates in /templates to add new fields or object types.
+
+⸻
 
 👤 Author
 	•	Author: Mike Dechow (@m1k3d)
 	•	Repo: github.com/m1k3d/ztb-site-automation
 	•	License: MIT
-
