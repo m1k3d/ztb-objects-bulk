@@ -15,31 +15,30 @@ This automation suite is designed to rapidly deploy Zscaler ZTB objects — incl
 It mirrors the same behavior and API calls used by the ZTB UI, but at enterprise scale.
 
 ✨ Key Capabilities
-	•	Bulk create ZTB objects such as Domains and Network prefixes.
-	•	Group rows by object name for clean, aggregated payloads.
-	•	Supports multiple object types, including domain-based and IP-based entries.
-	•	Environment-driven authentication using .env (tenant API URL, API key, Bearer token).
-	•	Template-based payloads using Jinja2 for flexibility and reuse.
-	•	Dry-run and Debug modes for validation before live deployment.
-	•	Integrated bearer token helper — one-line script to fetch and export credentials.
+- **Bulk create ZTB objects such as Domains and Network prefixes.
+- **Group rows by object name for clean, aggregated payloads.
+- **Supports multiple object types, including domain-based and IP-based entries.
+- **Environment-driven authentication using .env (tenant API URL, API key, Bearer token).
+- **Template-based payloads using Jinja2 for flexibility and reuse.
+- **Dry-run and Debug modes for validation before live deployment.
+- **Integrated bearer token helper — one-line script to fetch and export credentials.
 
 ⸻
 
 🧩 Directory Layout
 
 Project root (ztb-objects-bulk/):
-	•	objects_bulk.py — Main script to process CSV → generate payload → create ZTB objects.
-	•	ztb_login.py — Authenticates and exports the BEARER token automatically to .env.
-	•	templates/ — Folder containing Jinja2 payload templates.
-	•	object_payload.json.j2 — Jinja2 object creation template (used by objects_bulk.py).
-	•	objects.csv — CSV with definitions for domain or network objects.
-	•	.env — Environment variables (tenant API URL, BEARER token, and API key).
+- objects_bulk.py — Main script to process CSV → generate payload → create ZTB objects.
+- ztb_login.py — Authenticates and exports the BEARER token automatically to .env.
+- templates/ — Folder containing Jinja2 payload templates.
+- object_payload.json.j2 — Jinja2 object creation template (used by objects_bulk.py).
+- objects.csv — CSV with definitions for domain or network objects.
+- .env — Environment variables (tenant API URL, BEARER token, and API key).
 
 Optional folders (recommended):
-	•	logs/ — Stores execution logs, debug traces, and run summaries.
-	•	archive/ — Keeps historical CSVs for version tracking.
-	•	examples/ — Contains sample templates, CSVs, and payload examples for reference.
-
+- logs/ — Stores execution logs, debug traces, and run summaries.
+- archive/ — Keeps historical CSVs for version tracking.
+- examples/ — Contains sample templates, CSVs, and payload examples for reference.
 ⸻
 
 ⚙️ Before You Begin
@@ -64,9 +63,9 @@ Use the included helper script to handle login automatically:
 python3 ztb_login.py
 
 This will:
-	•	Call the ZTB API using your API key.
-	•	Write the Bearer token back into .env (e.g., BEARER="Bearer <token>").
-	•	Print an export command so you can load it directly into your shell.
+- Call the ZTB API using your API key.
+- Write the Bearer token back into .env (e.g., BEARER="Bearer <token>").
+- Print an export command so you can load it directly into your shell.
 
 You can also fetch and load everything at once:
 
@@ -96,11 +95,10 @@ Whitelist-ZCC,domains,domain1.com,
 Whitelist-ZCC,domains,domain2.com,
 Mike-DC,network,,172.16.50.0/24
 
-	•	name — Object name (rows with the same name are grouped).
-	•	type — Either domains or network.
-	•	fqdn — Domain entries for type domains.
-	•	ip_prefix_local — Subnet prefixes for type network.
-
+- **name — Object name (rows with the same name are grouped).
+- **type — Either domains or network.
+- **fqdn — Domain entries for type domains.
+- **ip_prefix_local — Subnet prefixes for type network.
 ⸻
 
 🧱 Running the Automation
