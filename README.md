@@ -49,7 +49,7 @@ Before using the automation, set up your environment and API credentials.
 
 Create a file named .env in the repo root:
 
-ZIA_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
+ZTB_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
 API_KEY="<your_api_key>"
 BEARER=""
 
