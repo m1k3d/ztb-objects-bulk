@@ -1,179 +1,103 @@
-🧠 ZTB Objects Bulk Creator
+objects_bulk.py — Bulk create ZTB Objects from CSV
 
-Automate the creation of Zscaler ZTB objects (domains, networks, etc.) — API-driven, scalable, and template-powered.
+Create ZTB Objects (Domains / Network CIDRs) in bulk from a CSV.
+Rows with the same (name, type) are grouped and their items are aggregated & de-duplicated.
 
-Author: Mike Dechow (@m1k3d)
-Repo: github.com/m1k3d/ztb-site-automation
-License: MIT
-Version: 1.0.0
-
-⸻
-
-🚀 Overview
-
-This automation suite is designed to rapidly deploy Zscaler ZTB objects — including domains and network prefixes — using a CSV-driven workflow.
-It mirrors the same behavior and API calls used by the ZTB UI, but at enterprise scale.
-
-✨ Key Capabilities
-- **Bulk create ZTB objects such as Domains and Network prefixes.
-- **Group rows by object name for clean, aggregated payloads.
-- **Supports multiple object types, including domain-based and IP-based entries.
-- **Environment-driven authentication using .env (tenant API URL, API key, Bearer token).
-- **Template-based payloads using Jinja2 for flexibility and reuse.
-- **Dry-run and Debug modes for validation before live deployment.
-- **Integrated bearer token helper — one-line script to fetch and export credentials.
+⚙️ Requirements
+	•	Python 3.9+
+	•	requests, jinja2 (install via pip install -r requirements.txt if needed)
 
 ⸻
 
-🧩 Directory Layout
+🔐 Auth & Environment
 
-Project root (ztb-objects-bulk/):
-- objects_bulk.py — Main script to process CSV → generate payload → create ZTB objects.
-- ztb_login.py — Authenticates and exports the BEARER token automatically to .env.
-- templates/ — Folder containing Jinja2 payload templates.
-- object_payload.json.j2 — Jinja2 object creation template (used by objects_bulk.py).
-- objects.csv — CSV with definitions for domain or network objects.
-- .env — Environment variables (tenant API URL, BEARER token, and API key).
+Create a .env file in the repo root:
 
-Optional folders (recommended):
-- logs/ — Stores execution logs, debug traces, and run summaries.
-- archive/ — Keeps historical CSVs for version tracking.
-- examples/ — Contains sample templates, CSVs, and payload examples for reference.
-⸻
+ZTB_API_BASE="https://<tenant>-api.goairgap.com"
+BEARER="auto filled by ztb_login.py"
+API_KEY="CREATE IN UI"
 
-⚙️ Before You Begin
+How it works now
+	•	If BEARER is missing, the script automatically runs ztb_login.py, reloads .env, and continues.
+	•	If any API call returns 401, it visibly refreshes via ztb_login.py and retries once.
+	•	No need to export env vars in your shell or use set -a / source .env.
 
-Before using the automation, set up your environment and API credentials.
-
-1️⃣ Configure Environment Variables (.env)
-
-Create a file named .env in the repo root:
-
-ZTB_API_BASE="https://<tenant>-api.goairgap.com/api/v3"
-API_KEY="<your_api_key>"
-BEARER=""
-
+Note: ZTB_API_BASE should be the root tenant URL (no /api/v2 or /api/v3 suffix).
+ztb_login.py uses your API_KEY to fetch a fresh bearer token and writes it to .env.
 
 ⸻
 
-2️⃣ Generate and Load Your Bearer Token
+📄 CSV Format
 
-Use the included helper script to handle login automatically:
+Headers are required:
 
-python3 ztb_login.py
+name,type,items
+Whitelist-ZCC,domains,domain1.com
+Whitelist-ZCC,domains,domain2.com
+Mike-DC,network,172.16.50.0/24
+Mike-DC,network,172.16.51.0/24
 
-This will:
-- Call the ZTB API using your API key.
-- Write the Bearer token back into .env (e.g., BEARER="Bearer <token>").
-- Print an export command so you can load it directly into your shell.
-
-You can also fetch and load everything at once:
-
-python3 ztb_login.py && set -a && source .env && set +a
-
-Tip: The login helper uses your existing .env credentials and auto-updates the token on each run.
+	•	type supports: domains or network
+	•	Rows with the same (name, type) get merged; items are automatically de-duplicated.
 
 ⸻
 
-3️⃣ Verify the Bearer Token
+🧩 Template
 
-Confirm the token works by running:
+By default, payloads are rendered using:
 
-curl -s -H "Authorization: $BEARER" \
-"$ZIA_API_BASE/api/v3/gateway?limit=1&refresh_token=enabled" | head
+templates/object_payload.json.j2
 
-If you see JSON output (not “Unauthorized”), you’re authenticated successfully.
+You can customize this template to match your tenant’s schema or extend it with additional object fields.
 
 ⸻
 
-🧾 CSV Format
+🚀 Usage
 
-Example (objects.csv):
-
-name,type,fqdn,ip_prefix_local
-Whitelist-ZCC,domains,domain1.com,
-Whitelist-ZCC,domains,domain2.com,
-Mike-DC,network,,172.16.50.0/24
-
-- **name — Object name (rows with the same name are grouped).
-- **type — Either domains or network.
-- **fqdn — Domain entries for type domains.
-- **ip_prefix_local — Subnet prefixes for type network.
-⸻
-
-🧱 Running the Automation
-
-Dry Run (Validation Only):
-
+# Dry run (print payloads, don't POST)
 python3 objects_bulk.py --dry-run
 
-Full Deployment:
-
+# Standard run
 python3 objects_bulk.py
 
-Debug Mode (verbose output):
+# Verbose output (shows payloads and responses)
+python3 objects_bulk.py -v
 
-python3 objects_bulk.py --debug
+# Use a different CSV
+python3 objects_bulk.py --csv my_objects.csv
 
-Arguments:
-
-Flag	Description
---csv <file>	Path to input CSV (default: objects.csv)
---template <file>	Jinja2 template path (default: templates/object_payload.json.j2)
---dry-run	Renders payloads without sending to API
---debug	Prints detailed API requests/responses
+# Use a custom template
+python3 objects_bulk.py --template templates/custom_object_payload.json.j2
 
 
 ⸻
 
-🧩 File Reference
+✅ Behavior
+	•	Groups rows by (name, type) and aggregates unique items
+	•	Builds payloads via Jinja2 template
+	•	POSTs to /api/v2/groups?refresh_token=enabled
+	•	Handles common responses:
+	•	200/201 → ✅ Created
+	•	409 → ⚠️ Already exists (skipped)
+	•	Summarizes results (Created / Skipped / Errors)
 
-File	Description
-objects_bulk.py	Creates ZTB objects from CSV definitions
-ztb_login.py	Retrieves API bearer token automatically
-object_payload.json.j2	Jinja2 payload template for object creation
-objects.csv	CSV defining domains and networks
-.env	Tenant API configuration
-requirements.txt	Python dependencies
-examples/	Sample payloads and templates
+⸻
+
+🧯 Troubleshooting
+
+Issue	Fix
+401 Unauthorized loop	Check API_KEY validity in .env and ensure ztb_login.py exists.
+404 or bad base URL	Confirm ZTB_API_BASE uses the root domain (no /api/v2 or /api/v3).
+Template render errors	The Jinja environment is strict — fix missing variables or CSV headers.
 
 
 ⸻
 
-💡 Best Practices
-
-✅ Validate your CSV with --dry-run before bulk posting.
-✅ Use consistent naming for object groups (e.g., Whitelist-*, Site-DC-*).
-✅ Keep .env and API keys out of version control.
-✅ Archive successful CSVs under /archive for audit history.
-✅ Extend Jinja2 templates for custom fields or new object types.
-
-⸻
-
-🧠 Example Workflow Summary
-
-1️⃣ Prepare .env with tenant URL, API key, and blank BEARER field.
-2️⃣ Run ztb_login.py to fetch and export your BEARER token.
-3️⃣ Build or import objects.csv with your objects to deploy.
-4️⃣ Run objects_bulk.py --dry-run to validate payloads.
-5️⃣ Run objects_bulk.py to push to API.
-6️⃣ Verify in ZTB UI — confirm new objects appear under Object Management.
-
-⸻
-
-🧰 Troubleshooting Tips
-
-Symptom	Likely Cause	Fix
-401 Unauthorized	Expired or missing Bearer token	Re-run ztb_login.py
-Bad Request (400)	Missing or invalid CSV column	Check type, fqdn, or ip_prefix_local fields
-Empty Object Group	Same object name but mismatched types	Use consistent type per group
-API Timeout	Too many objects in a single request	Split CSV into smaller chunks
-
-
-⸻
-
-🧭 License
-
-This project is licensed under the MIT License — feel free to modify and extend it for your own organization.
+🆕 What’s New
+	•	🪄 Auto-login + token refresh on 401 (no manual steps)
+	•	⚙️ .env loader integration (no set -a required)
+	•	💡 Clean error handling & summary
+	•	🧩 Automatic CSV grouping + de-dupe
+	•	🧠 Future support planned for Ports, Zones, and additional object types
 
 ⸻

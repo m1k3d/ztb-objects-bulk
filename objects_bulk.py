@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-objects_bulk.py — create ZTB Objects in bulk from CSV, with row-grouping.
+objects_bulk.py — Create ZTB Objects in bulk from CSV (grouped by name+type) with auto-login & 401 refresh.
 
 CSV format (headers required):
   name,type,items
-Rows with the same (name,type) are grouped; their `items` are aggregated.
+Rows with the same (name,type) are grouped; their `items` are aggregated (de-duplicated).
 
 Examples:
   name,type,items
@@ -14,8 +14,13 @@ Examples:
   Mike-DC,network,172.16.51.0/24
 
 .env expected:
-  BASE_URL="https://<vanity>-api.goairgap.com"
-  BEARER="eyJ..."
+  ZTB_API_BASE="https://<tenant>-api.goairgap.com"
+  BEARER="auto filled by ztb_login.py"
+  API_KEY="CREATE IN UI"
+
+Behavior:
+  • If BEARER is missing at startup, we run ztb_login.py, reload .env, and continue.
+  • If a request returns 401, we refresh once via ztb_login.py and retry automatically.
 """
 
 from __future__ import annotations
@@ -24,19 +29,39 @@ import csv
 import json
 import os
 import sys
-from collections import defaultdict
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import requests
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-# Optional: load .env if present
+
+# --- .env loading (dotenv first, tiny fallback second) -----------------------
+def _tiny_load_env_file(path: str = ".env"):
+    p = Path(path)
+    if not p.exists():
+        return
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k = k.strip()
+        v = v.strip().strip('"').strip("'")
+        if k and k not in os.environ:
+            os.environ[k] = v
+
 try:
     from dotenv import load_dotenv
     load_dotenv(override=False)
 except Exception:
-    pass
+    _tiny_load_env_file(".env")
+# ---------------------------------------------------------------------------
+
+
+ROOT = Path(__file__).resolve().parent
+LOGIN_SCRIPT = ROOT / "ztb_login.py"
 
 
 def getenv_clean(key: str, default: str = "") -> str:
@@ -44,26 +69,70 @@ def getenv_clean(key: str, default: str = "") -> str:
     return val.strip() if val else ""
 
 
-def normalize_bearer(raw: str) -> str:
-    if not raw:
-        return ""
-    raw = raw.strip()
-    return raw if raw.lower().startswith("bearer ") else f"Bearer {raw}"
+def _normalize_base_root(raw: str) -> str:
+    """Accept https://foo-api.goairgap.com[/api/v3|/api/v2] → return clean root"""
+    base = (raw or "").strip().rstrip("/")
+    if base.endswith("/api/v3") or base.endswith("/api/v2"):
+        base = base.rsplit("/api/", 1)[0]
+    return base
+
+
+def _ensure_bearer_present_or_login():
+    """If BEARER missing, invoke ztb_login.py to fetch it, then reload .env."""
+    bearer = getenv_clean("BEARER")
+    if bearer:
+        return
+    if not LOGIN_SCRIPT.exists():
+        print("ERROR: BEARER not set and ztb_login.py not found. Please run login manually.", file=sys.stderr)
+        sys.exit(1)
+    print("🔐 BEARER missing — invoking ztb_login.py to obtain a fresh token…")
+    try:
+        subprocess.run([sys.executable, str(LOGIN_SCRIPT)], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: ztb_login.py failed with exit code {e.returncode}", file=sys.stderr)
+        sys.exit(1)
+    # reload env
+    try:
+        from dotenv import load_dotenv as _ld
+        _ld(override=True)
+    except Exception:
+        _tiny_load_env_file(".env")
+
+
+def _refresh_bearer_and_update_session(session: requests.Session) -> bool:
+    """Invoke ztb_login.py, reload .env, and update Authorization header."""
+    if not LOGIN_SCRIPT.exists():
+        print("ERROR: Cannot refresh token automatically (ztb_login.py not found).", file=sys.stderr)
+        return False
+    print("🔄 401 Unauthorized — refreshing token via ztb_login.py and retrying once…")
+    try:
+        subprocess.run([sys.executable, str(LOGIN_SCRIPT)], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: ztb_login.py failed with exit code {e.returncode}", file=sys.stderr)
+        return False
+    try:
+        from dotenv import load_dotenv as _ld
+        _ld(override=True)
+    except Exception:
+        _tiny_load_env_file(".env")
+    new_bearer_raw = getenv_clean("BEARER")
+    if not new_bearer_raw:
+        print("ERROR: ztb_login.py ran but BEARER is still empty.", file=sys.stderr)
+        return False
+    session.headers["Authorization"] = f"Bearer {new_bearer_raw}"
+    return True
 
 
 def read_and_group(csv_path: Path) -> Dict[Tuple[str, str], Dict[str, object]]:
-    """
-    Returns a dict: (name,type) -> {"name": name, "type": type, "items": [..]}
-    Groups rows; de-duplicates items per group.
-    """
+    """Group rows by (name,type); de-duplicate items per group."""
     groups: Dict[Tuple[str, str], Dict[str, object]] = {}
     with csv_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        for i, row in enumerate(reader, start=2):  # start=2 because header is line 1
+        for i, row in enumerate(reader, start=2):
             try:
-                name = row["name"].strip()
-                typ = row["type"].strip().lower()
-                item = row["items"].strip()
+                name = (row["name"] or "").strip()
+                typ = (row["type"] or "").strip().lower()
+                item = (row["items"] or "").strip()
             except KeyError as e:
                 raise SystemExit(f"❌ CSV missing required column: {e}. Required: name,type,items")
 
@@ -78,11 +147,8 @@ def read_and_group(csv_path: Path) -> Dict[Tuple[str, str], Dict[str, object]]:
             key = (name, typ)
             if key not in groups:
                 groups[key] = {"name": name, "type": typ, "items": []}
-
-            # de-dup within group
             if item not in groups[key]["items"]:
                 groups[key]["items"].append(item)
-
     return groups
 
 
@@ -95,13 +161,22 @@ def main():
     ap.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = ap.parse_args()
 
-    base_url = getenv_clean("BASE_URL")
-    bearer = normalize_bearer(getenv_clean("BEARER"))
+    # Ensure BEARER (may invoke ztb_login.py)
+    _ensure_bearer_present_or_login()
 
-    if not base_url or not bearer:
-        print("❌ BASE_URL and/or BEARER missing. Put them in .env or export in shell.")
-        print('   Example .env:\n     BASE_URL="https://<vanity>-api.goairgap.com"\n     BEARER="eyJ..."')
+    # ✅ Prefer ZTB_API_BASE for consistency with other tools
+    base_url_env = getenv_clean("ZTB_API_BASE") or getenv_clean("BASE_URL")
+    base_root = _normalize_base_root(base_url_env)
+    if not base_root:
+        print('❌ Missing ZTB_API_BASE or BASE_URL in .env (expected https://<tenant>-api.goairgap.com)', file=sys.stderr)
         sys.exit(1)
+
+    bearer_raw = getenv_clean("BEARER")
+    if not bearer_raw:
+        print("❌ BEARER missing even after ztb_login.py. Aborting.", file=sys.stderr)
+        sys.exit(1)
+
+    API_V2 = f"{base_root}/api/v2"
 
     csv_path = Path(args.csv).resolve()
     if not csv_path.exists():
@@ -113,13 +188,11 @@ def main():
         print(f"❌ Template not found: {template_path}")
         sys.exit(1)
 
-    # Group & prepare
     groups = read_and_group(csv_path)
     if not groups:
         print("ℹ️  Nothing to do (no valid rows).")
         return
 
-    # Jinja env
     env = Environment(
         loader=FileSystemLoader(str(template_path.parent)),
         undefined=StrictUndefined,
@@ -128,17 +201,24 @@ def main():
     )
     tpl = env.get_template(template_path.name)
 
-    # API endpoint
-    url = f"{base_url.rstrip('/')}/api/v2/groups?refresh_token=enabled"
-    headers = {
-        "Authorization": bearer,
+    # Create session
+    session = requests.Session()
+    session.headers.update({
+        "Authorization": f"Bearer {bearer_raw}",
         "Content-Type": "application/json",
         "Accept": "application/json, text/plain, */*",
-    }
+        "User-Agent": "objects_bulk.py",
+    })
 
-    created = 0
-    skipped = 0
-    errors = 0
+    def _request_with_auto_refresh(method: str, url: str, *, json_payload=None, timeout=45) -> requests.Response:
+        r = session.request(method, url, json=json_payload, timeout=timeout)
+        if r.status_code == 401:
+            if _refresh_bearer_and_update_session(session):
+                r = session.request(method, url, json=json_payload, timeout=timeout)
+        return r
+
+    url = f"{API_V2}/groups?refresh_token=enabled"
+    created = skipped = errors = 0
 
     for (name, typ), data in groups.items():
         payload_str = tpl.render(name=name, type=typ, items=data["items"])
@@ -159,17 +239,16 @@ def main():
             continue
 
         try:
-            resp = requests.post(url, headers=headers, json=payload, timeout=30)
-            if resp.status_code in (200, 201):
+            resp = _request_with_auto_refresh("POST", url, json_payload=payload)
+            if resp.status_code in (200, 201, 202):
                 created += 1
                 if args.verbose:
                     print(f"✅ Created '{name}' ({typ})")
             elif resp.status_code == 409:
-                # If you want to update instead, this is the spot to add upsert logic.
                 print(f"⚠️  Exists (409): '{name}' ({typ}) — skipping")
                 skipped += 1
             else:
-                snippet = resp.text[:300].replace("\n", " ")
+                snippet = (resp.text or "")[:300].replace("\n", " ")
                 print(f"❌ Error {resp.status_code} creating '{name}' ({typ}): {snippet}")
                 errors += 1
         except requests.RequestException as e:
