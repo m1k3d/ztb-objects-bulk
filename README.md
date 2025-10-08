@@ -1,18 +1,22 @@
-objects_bulk.py — Bulk create ZTB Objects from CSV
+# objects_bulk.py — Bulk create ZTB Objects from CSV
 
-Create ZTB Objects (Domains / Network CIDRs) in bulk from a CSV.
+Create ZTB Objects (Domains / Network CIDRs) in bulk from a CSV.  
 Rows with the same (name, type) are grouped and their items are aggregated & de-duplicated.
 
-⚙️ Requirements
-	•	Python 3.9+
-	•	requests, jinja2 (install via pip install -r requirements.txt if needed)
+---
 
-⸻
+## ⚙️ Requirements
 
-🔐 Auth & Environment
+- Python 3.9+
+- requests, jinja2 (install via `pip install -r requirements.txt` if needed)
 
-Create a .env file in the repo root:
+---
 
+## 🔐 Auth & Environment
+
+Create a `.env` file in the repo root:
+
+```bash
 ZTB_API_BASE="https://<tenant>-api.goairgap.com"
 BEARER="auto filled by ztb_login.py"
 API_KEY="CREATE IN UI"
@@ -100,4 +104,4 @@ Template render errors	The Jinja environment is strict — fix missing variables
 	•	🧩 Automatic CSV grouping + de-dupe
 	•	🧠 Future support planned for Ports, Zones, and additional object types
 
-⸻
+---
